@@ -77,10 +77,12 @@ class _BoardWidgetState extends State<BoardWidget> {
                       children: [
                         // 1. Grid Background
                         Positioned.fill(
-                          child: CustomPaint(
-                            painter: GridPainter(
-                              boardSize: widget.state.boardSize,
-                              cellSize: widget.cellSize,
+                          child: RepaintBoundary(
+                            child: CustomPaint(
+                              painter: GridPainter(
+                                boardSize: widget.state.boardSize,
+                                cellSize: widget.cellSize,
+                              ),
                             ),
                           ),
                         ),
@@ -240,20 +242,22 @@ class _WinningCellHighlightState extends State<WinningCellHighlight>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
+        // Hiệu ứng nền nhấp nháy mạnh hơn cho 5 ô thắng
+        final double opacity = 0.2 + _controller.value * 0.4;
         return Container(
           margin: const EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: Colors.greenAccent.withOpacity(0.1 + _controller.value * 0.2),
-            borderRadius: BorderRadius.circular(6),
+            color: Colors.amberAccent.withOpacity(opacity * 0.5),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: Colors.greenAccent.withOpacity(0.3 + _controller.value * 0.5),
-              width: 1.5,
+              color: Colors.amberAccent.withOpacity(opacity + 0.2),
+              width: 2.0,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.greenAccent.withOpacity(0.2 * _controller.value),
-                blurRadius: 8,
-                spreadRadius: 1,
+                color: Colors.amber.withOpacity(opacity * 0.6),
+                blurRadius: 12,
+                spreadRadius: 2,
               ),
             ],
           ),
@@ -349,13 +353,14 @@ class _AnimatedPieceState extends State<AnimatedPiece>
   @override
   void initState() {
     super.initState();
+    // Hiệu ứng phóng to trong 200ms
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 200),
     );
     _animation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOutBack,
+      curve: Curves.easeOutBack, // Cảm giác nảy nhẹ khi phóng to
     );
     _controller.forward();
   }
@@ -371,18 +376,28 @@ class _AnimatedPieceState extends State<AnimatedPiece>
     final isX = widget.player == Player.X;
     final primaryColor = isX ? const Color(0xFF00F2FE) : const Color(0xFFFF007F);
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return CustomPaint(
-          painter: PiecePainter(
-            player: widget.player,
-            color: primaryColor,
-            progress: _animation.value,
-            isWinning: widget.isWinning,
-          ),
-        );
-      },
+    // Bọc RepaintBoundary để ô nào vẽ xong rồi thì không bị vẽ lại, tối ưu hiệu suất bàn lớn
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          // Kết hợp hiệu ứng scale (phóng to từ 0 đến 1)
+          return Transform.scale(
+            scale: _animation.value,
+            child: CustomPaint(
+              painter: PiecePainter(
+                player: widget.player,
+                color: primaryColor,
+                // Do đã có scale nên progress vẽ luôn là 1.0 (kích thước đầy đủ)
+                // Tuy nhiên, nếu muốn kết hợp cả hiệu ứng vẽ tia thì có thể để _animation.value
+                // Ở đây ta dùng 1.0 vì yêu cầu nói "phóng to từ nhỏ đến kích thước thật"
+                progress: 1.0, 
+                isWinning: widget.isWinning,
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
