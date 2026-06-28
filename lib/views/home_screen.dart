@@ -6,7 +6,7 @@ import '../controllers/game_controller.dart';
 import '../models/board_position.dart';
 import '../models/badge_model.dart';
 import 'game_screen.dart';
-import 'login_screen.dart';
+import 'profile_screen.dart';
 import 'widgets/neon_button.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -26,21 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
       Player.X; // In VS AI, which symbol user plays. Opponent is AI.
   AiDifficulty _selectedDifficulty = AiDifficulty.medium;
 
-  Future<void> _signOut(BuildContext context) async {
-    try {
-      await Supabase.instance.client.auth.signOut();
-      if (!context.mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
-    } catch (_) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đăng xuất thất bại. Vui lòng thử lại.')),
-      );
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -54,13 +40,17 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           if (_isLoggedIn)
             IconButton(
-              tooltip: 'Đăng xuất',
+              tooltip: 'Thông tin cá nhân',
               icon: const Icon(
-                Icons.logout_rounded,
+                Icons.person_rounded,
                 color: Colors.white70,
                 size: 20,
               ),
-              onPressed: () => _signOut(context),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
             ),
         ],
       ),
