@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'widgets/change_password_bottom_sheet.dart';
 import 'widgets/neon_button.dart';
 import 'login_screen.dart';
 
@@ -42,9 +43,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showChangePasswordBottomSheet(BuildContext context) {
-    // Stub to be implemented in Task 4
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đổi mật khẩu sẽ được triển khai ở bước sau.')),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const ChangePasswordBottomSheet(),
     );
   }
 
