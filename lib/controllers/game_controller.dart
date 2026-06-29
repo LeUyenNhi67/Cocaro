@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/board_position.dart';
 import '../models/game_state.dart';
 import '../models/badge_model.dart';
+import '../services/rank_service.dart';
 import '../utils/sound_manager.dart';
 import 'ai_controller.dart';
 
@@ -158,6 +159,17 @@ class GameController extends ChangeNotifier {
       // Check for badge achievements
       _checkForNewBadges(_state.currentPlayer, false, _state.boardSize);
 
+      // Record rank match result
+      final String resultStr =
+          (_gameMode == GameMode.vsAI && _state.currentPlayer == _aiPlayer)
+              ? 'LOSS'
+              : 'WIN';
+      RankService.addMatchResult(
+        mode: _gameMode == GameMode.vsAI ? 'Đấu với Máy' : '2 Người chơi',
+        result: resultStr,
+        isHardAi: _gameMode == GameMode.vsAI && _aiDifficulty == AiDifficulty.hard,
+      );
+
       // Play synthesized audio
       if (_gameMode == GameMode.vsAI && _state.currentPlayer == _aiPlayer) {
         SoundManager.playLose();
@@ -177,6 +189,13 @@ class GameController extends ChangeNotifier {
 
       // Check for badge achievements
       _checkForNewBadges(null, true, _state.boardSize);
+
+      // Record rank match result
+      RankService.addMatchResult(
+        mode: _gameMode == GameMode.vsAI ? 'Đấu với Máy' : '2 Người chơi',
+        result: 'DRAW',
+        isHardAi: _gameMode == GameMode.vsAI && _aiDifficulty == AiDifficulty.hard,
+      );
 
       // Play synthesized audio
       SoundManager.playDraw();
