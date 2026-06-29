@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'widgets/change_password_bottom_sheet.dart';
 import 'widgets/neon_button.dart';
@@ -14,6 +16,24 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _user = Supabase.instance.client.auth.currentUser;
+  late final TextEditingController _nicknameController;
+  String? _avatarBase64;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final metadata = _user?.userMetadata;
+    final initialNickname = metadata?['nickname'] as String? ?? '';
+    _nicknameController = TextEditingController(text: initialNickname);
+    _avatarBase64 = metadata?['avatar_base64'] as String?;
+  }
+
+  @override
+  void dispose() {
+    _nicknameController.dispose();
+    super.dispose();
+  }
 
   Future<void> _signOut(BuildContext context) async {
     try {
@@ -31,6 +51,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _pickAndSaveAvatar() async {
+    final picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 400,
+      maxHeight: 400,
+      imageQuality: 85,
+    );
+    if (pickedFile == null) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final bytes = await pickedFile.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      await Supabase.instance.client.auth.updateUser(
+        UserAttributes(data: {'avatar_base64': base64Image}),
+      );
+
+      setState(() {
+        _avatarBase64 = base64Image;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã cập nhật ảnh đại diện thành công!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi cập nhật ảnh đại diện: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _saveNickname() async {
+    final newName = _nicknameController.text.trim();
+    if (newName.isEmpty) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await Supabase.instance.client.auth.updateUser(
+        UserAttributes(data: {'nickname': newName}),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã lưu biệt danh thành công!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi cập nhật biệt danh: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Widget _buildAmbientOrb(Color color, double size) {
     return Container(
       width: size,
@@ -38,6 +122,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: color.withOpacity(0.18),
         shape: BoxShape.circle,
+      ),
+    );
+  }
+
+  Widget _buildAvatarWidget() {
+    ImageProvider? imageProvider;
+    if (_avatarBase64 != null && _avatarBase64!.isNotEmpty) {
+      try {
+        imageProvider = MemoryImage(base64Decode(_avatarBase64!));
+      } catch (_) {}
+    }
+
+    return GestureDetector(
+      onTap: _isLoading ? null : _pickAndSaveAvatar,
+      child: Stack(
+        alignment: Alignment.bottomRight,
+        children: [
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: const Color(0xFF00F2FE),
+                width: 2.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF00F2FE).withOpacity(0.3),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: imageProvider != null
+                  ? Image(image: imageProvider, fit: BoxFit.cover)
+                  : Container(
+                      color: const Color(0xFF00F2FE).withOpacity(0.1),
+                      child: const Icon(
+                        Icons.person_rounded,
+                        color: Color(0xFF00F2FE),
+                        size: 56,
+                      ),
+                    ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFF007F),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.camera_alt_rounded,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -94,8 +238,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28.0),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 20.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -113,23 +257,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     child: Column(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF00F2FE).withOpacity(0.1),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFF00F2FE).withOpacity(0.3),
-                              width: 2,
+                        _buildAvatarWidget(),
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: _nicknameController,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          textAlign: TextAlign.center,
+                          decoration: InputDecoration(
+                            labelText: 'BIỆT DANH / NICKNAME',
+                            labelStyle: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            floatingLabelBehavior: FloatingLabelBehavior.always,
+                            suffixIcon: IconButton(
+                              icon: const Icon(
+                                Icons.check_circle_rounded,
+                                color: Color(0xFF00F2FE),
+                              ),
+                              onPressed: _isLoading ? null : _saveNickname,
+                            ),
+                            enabledBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Colors.white.withOpacity(0.2),
+                              ),
+                            ),
+                            focusedBorder: const UnderlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFF00F2FE)),
                             ),
                           ),
-                          child: const Icon(
-                            Icons.person_rounded,
-                            color: Color(0xFF00F2FE),
-                            size: 64,
-                          ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         const Text(
                           'Email tài khoản',
                           style: TextStyle(
@@ -143,16 +306,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Text(
                           email,
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
+                            color: Colors.white70,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
                           textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 36),
                   NeonButton(
                     text: 'ĐỔI MẬT KHẨU',
                     icon: Icons.lock_outline_rounded,
