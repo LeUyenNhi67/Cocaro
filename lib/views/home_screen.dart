@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -28,6 +29,86 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
 
+  Widget _buildProfileHeaderAction() {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    final metadata = user.userMetadata;
+    final nickname =
+        metadata?['nickname'] as String? ?? user.email?.split('@').first ?? 'Người chơi';
+    final avatarBase64 = metadata?['avatar_base64'] as String?;
+
+    ImageProvider? imageProvider;
+    if (avatarBase64 != null && avatarBase64.isNotEmpty) {
+      try {
+        imageProvider = MemoryImage(base64Decode(avatarBase64));
+      } catch (_) {}
+    }
+
+    return InkWell(
+      onTap: () async {
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+        );
+        if (mounted) {
+          setState(() {}); // Refresh avatar and nickname when returning
+        }
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F172A).withOpacity(0.6),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: const Color(0xFF00F2FE).withOpacity(0.4),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF00F2FE).withOpacity(0.15),
+              blurRadius: 8,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+              ),
+              child: ClipOval(
+                child: imageProvider != null
+                    ? Image(image: imageProvider, fit: BoxFit.cover)
+                    : Container(
+                        color: const Color(0xFF00F2FE).withOpacity(0.2),
+                        child: const Icon(
+                          Icons.person_rounded,
+                          color: Color(0xFF00F2FE),
+                          size: 20,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              nickname,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,22 +116,13 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        toolbarHeight: 44,
+        toolbarHeight: 56,
         automaticallyImplyLeading: false,
         actions: [
           if (_isLoggedIn)
-            IconButton(
-              tooltip: 'Thông tin cá nhân',
-              icon: const Icon(
-                Icons.person_rounded,
-                color: Colors.white70,
-                size: 20,
-              ),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                );
-              },
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Center(child: _buildProfileHeaderAction()),
             ),
         ],
       ),
