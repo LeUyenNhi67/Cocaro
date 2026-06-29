@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/supabase_config.dart';
+import 'views/home_screen.dart';
 import 'views/login_screen.dart';
 
 Future<void> main() async {
@@ -20,8 +21,10 @@ class CaroApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final session = Supabase.instance.client.auth.currentSession;
+
     return MaterialApp(
-      title: 'Cá» Caro - Gomoku',
+      title: 'Cờ Caro - Gomoku',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,
       darkTheme: ThemeData(
@@ -40,7 +43,7 @@ class CaroApp extends StatelessWidget {
           bodyMedium: TextStyle(color: Colors.white70),
         ),
       ),
-      home: const LoginScreen(),
+      home: session != null ? const HomeScreen() : const LoginScreen(),
     );
   }
 }
