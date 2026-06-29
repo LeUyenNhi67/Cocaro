@@ -31,7 +31,7 @@ class RankModel {
     RankModel(
       tier: RankTier.silver,
       title: 'Bạc 🥈',
-      icon: Icons.shield_amber_outlined,
+      icon: Icons.shield_rounded,
       color: Color(0xFFC0C0C0),
       minDiamonds: 50,
       maxDiamonds: 149,

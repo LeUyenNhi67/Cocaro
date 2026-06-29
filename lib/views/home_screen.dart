@@ -6,9 +6,10 @@ import '../controllers/ai_controller.dart';
 import '../controllers/game_controller.dart';
 import '../models/board_position.dart';
 import '../models/badge_model.dart';
-import '../models/rank_model.dart';
+
 import '../services/rank_service.dart';
 import 'game_screen.dart';
+import 'lobby_screen.dart';
 import 'profile_screen.dart';
 import 'widgets/leaderboard_modal.dart';
 import 'widgets/neon_button.dart';
@@ -270,10 +271,31 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildSectionHeader('KÍCH THƯỚC BÀN CỜ'),
                     const SizedBox(height: 12),
                     _buildSizeSelector(),
-                    const SizedBox(height: 56),
+                    const SizedBox(height: 40),
 
                     // Play Button
                     _buildStartButton(context),
+                    const SizedBox(height: 16),
+
+                    // Online Play Button
+                    if (_isLoggedIn)
+                      NeonButton(
+                        text: 'CHƠI ONLINE',
+                        icon: Icons.language_rounded,
+                        glowColor: const Color(0xFFFF007F),
+                        gradientColors: const [
+                          Color(0xFFFF007F),
+                          Color(0xFFAA076B),
+                        ],
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const LobbyScreen(),
+                            ),
+                          );
+                        },
+                        width: double.infinity,
+                      ),
                     const SizedBox(height: 32),
                   ],
                 ),

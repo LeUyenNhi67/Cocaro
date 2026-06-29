@@ -474,6 +474,7 @@ class GameScreen extends StatelessWidget {
       gameMode: controller.gameMode,
       aiPlayer: controller.aiPlayer,
       lastUnlockedBadge: controller.lastUnlockedBadge,
+      earnedDiamonds: controller.earnedDiamonds,
       onPlayAgain: () {
         controller.clearLastUnlockedBadge();
         controller.reset();
@@ -595,6 +596,7 @@ class GameOverOverlay extends StatefulWidget {
   final GameMode gameMode;
   final Player aiPlayer;
   final BadgeModel? lastUnlockedBadge;
+  final int earnedDiamonds;
   final VoidCallback onPlayAgain;
 
   const GameOverOverlay({
@@ -603,6 +605,7 @@ class GameOverOverlay extends StatefulWidget {
     required this.gameMode,
     required this.aiPlayer,
     this.lastUnlockedBadge,
+    required this.earnedDiamonds,
     required this.onPlayAgain,
   });
 
@@ -766,6 +769,42 @@ class _GameOverOverlayState extends State<GameOverOverlay>
                             ),
                             textAlign: TextAlign.center,
                           ),
+
+                          // Reward Diamonds Display
+                          if (widget.earnedDiamonds > 0) ...[
+                            const SizedBox(height: 18),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF00F2FE).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFF00F2FE).withValues(alpha: 0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.diamond_rounded,
+                                    color: Color(0xFF00F2FE),
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '+${widget.earnedDiamonds} KIM CƯƠNG!',
+                                    style: const TextStyle(
+                                      color: Color(0xFF00F2FE),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
 
                           // Newly unlocked badge details
                           if (widget.lastUnlockedBadge != null) ...[

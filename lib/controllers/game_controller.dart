@@ -23,6 +23,7 @@ class GameController extends ChangeNotifier {
   // Global static badges list to persist across landing transitions
   static final Set<String> _globalUnlockedBadges = {};
   BadgeModel? _lastUnlockedBadge;
+  int _earnedDiamonds = 0;
 
   GameController({
     int boardSize = 15,
@@ -56,6 +57,7 @@ class GameController extends ChangeNotifier {
   int get drawScore => _drawScore;
   Set<String> get unlockedBadges => _globalUnlockedBadges;
   BadgeModel? get lastUnlockedBadge => _lastUnlockedBadge;
+  int get earnedDiamonds => _earnedDiamonds;
 
   static Set<String> getGlobalUnlockedBadges() => _globalUnlockedBadges;
 
@@ -108,6 +110,7 @@ class GameController extends ChangeNotifier {
   void reset() {
     _state = GameState.initial(_state.boardSize);
     _isAiThinking = false;
+    _earnedDiamonds = 0;
     notifyListeners();
 
     // If AI goes first
@@ -164,11 +167,15 @@ class GameController extends ChangeNotifier {
           (_gameMode == GameMode.vsAI && _state.currentPlayer == _aiPlayer)
               ? 'LOSS'
               : 'WIN';
+      _earnedDiamonds = 0;
       RankService.addMatchResult(
         mode: _gameMode == GameMode.vsAI ? 'Đấu với Máy' : '2 Người chơi',
         result: resultStr,
         isHardAi: _gameMode == GameMode.vsAI && _aiDifficulty == AiDifficulty.hard,
-      );
+      ).then((earned) {
+        _earnedDiamonds = earned;
+        notifyListeners();
+      });
 
       // Play synthesized audio
       if (_gameMode == GameMode.vsAI && _state.currentPlayer == _aiPlayer) {
@@ -191,11 +198,15 @@ class GameController extends ChangeNotifier {
       _checkForNewBadges(null, true, _state.boardSize);
 
       // Record rank match result
+      _earnedDiamonds = 0;
       RankService.addMatchResult(
         mode: _gameMode == GameMode.vsAI ? 'Đấu với Máy' : '2 Người chơi',
         result: 'DRAW',
         isHardAi: _gameMode == GameMode.vsAI && _aiDifficulty == AiDifficulty.hard,
-      );
+      ).then((earned) {
+        _earnedDiamonds = earned;
+        notifyListeners();
+      });
 
       // Play synthesized audio
       SoundManager.playDraw();
