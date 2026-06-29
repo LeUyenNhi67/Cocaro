@@ -6,8 +6,11 @@ import '../controllers/ai_controller.dart';
 import '../controllers/game_controller.dart';
 import '../models/board_position.dart';
 import '../models/badge_model.dart';
+import '../models/rank_model.dart';
+import '../services/rank_service.dart';
 import 'game_screen.dart';
 import 'profile_screen.dart';
+import 'widgets/leaderboard_modal.dart';
 import 'widgets/neon_button.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -109,7 +112,89 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildRankCard(BuildContext context) {
+    if (!_isLoggedIn) return const SizedBox.shrink();
+
+    final rank = RankService.getUserRank();
+    final diamonds = RankService.getUserDiamonds();
+
+    return GestureDetector(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => const LeaderboardModal(),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F172A).withOpacity(0.6),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: rank.color.withOpacity(0.5),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: rank.color.withOpacity(0.15),
+              blurRadius: 10,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(rank.icon, color: rank.color, size: 28),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'BẢNG XẾP HẠNG & RANK',
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                Text(
+                  rank.title,
+                  style: TextStyle(
+                    color: rank.color,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Row(
+              children: [
+                const Icon(Icons.diamond_rounded, color: Color(0xFF00F2FE), size: 18),
+                const SizedBox(width: 4),
+                Text(
+                  '$diamonds',
+                  style: const TextStyle(
+                    color: Color(0xFF00F2FE),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right_rounded, color: Colors.white38),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF070B19),
@@ -159,7 +244,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 32),
                     // Header Logo & Title
                     _buildHeader(),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 24),
+                    _buildRankCard(context),
+                    const SizedBox(height: 32),
 
                     // Game Mode Selection Cards
                     _buildSectionHeader('CHỌN CHẾ ĐỘ CHƠI'),
